@@ -17,7 +17,7 @@ with tf.device('/device:GPU:0'):
     alpha = 1e3
     beta = 1e-3
     
-    image_size = 224
+    image_size = 500
     input_shape = (1, image_size, image_size, 3)
     
     # The VGG network requires the images to be zero mean
@@ -316,31 +316,32 @@ with tf.device('/device:GPU:0'):
     
     del vgg_layers # Releasing memory
     
-    n_iter = 100 # Number of optimizations steps per image
-    
-    for j in range(10):
-        print('\nProcessing the {}th image ...'.format(j+1))
-        tf.global_variables_initializer().run()
-        (cont, cont_mean), (style, style_mean) = sess.run([content_iter.get_next(), style_iter.get_next()])
-        # Saving the content and style images to disk
-        if not os.path.exists(os.path.join('data','gen_{}'.format(j))):
-            os.mkdir(os.path.join('data', 'gen_{}'.format(j)))
-        save_image_with_restore(cont[0], cont_mean[0], os.path.join('data', 'gen_{}'.format(j),'content.jpg'))
-        save_image_with_restore(style[0], style_mean[0], os.path.join('data', 'gen_{}'.format(j),'style.jpg'))
+    n_iter = 5000 # Number of optimizations steps per image
         
-        # Initialize the generated image with the values of the content image
-        sess.run(init_generated, feed_dict={gen_ph:cont})
-        
-        for i in range(n_iter):
+    j = 0;
+    print('\nProcessing the {}th image ...'.format(j+1))
+    tf.global_variables_initializer().run()
+    (cont, cont_mean), (style, style_mean) = sess.run([content_iter.get_next(), style_iter.get_next()])
+    # Saving the content and style images to disk
+    if not os.path.exists(os.path.join('data','gen_{}'.format(j))):
+        os.mkdir(os.path.join('data', 'gen_{}'.format(j)))
+    save_image_with_restore(cont[0], cont_mean[0], os.path.join('data', 'gen_{}'.format(j),'content.jpg'))
+    save_image_with_restore(style[0], style_mean[0], os.path.join('data', 'gen_{}'.format(j),'style.jpg'))
     
-            l, _ = sess.run([tot_loss,optimize], feed_dict={
-                inputs["content"]: cont,
-                inputs["style"]: style,
-                layer_weights_ph: get_layer_weights(0, len(layer_ids))
-            })
+    # Initialize the generated image with the values of the content image
+    sess.run(init_generated, feed_dict={gen_ph:cont})
     
-            # Printing out results and saving the generated image
-            if (i+1)%50==0:
-                print('\tLoss at iteration {}: {}'.format(i+1, l))
-        gen_image = sess.run(inputs["generated"])
-        save_image_with_restore(gen_image[0], cont_mean[0], os.path.join('data', 'gen_{}'.format(j),'gen_{}.jpg'.format(i+1)))
+    for i in range(n_iter):
+
+        l, _ = sess.run([tot_loss,optimize], feed_dict={
+            inputs["content"]: cont,
+            inputs["style"]: style,
+            layer_weights_ph: get_layer_weights(0, len(layer_ids))
+        })
+
+        # Printing out results and saving the generated image
+        print(i)
+        if (i+1)%50==0:
+            print('\tLoss at iteration {}: {}'.format(i+1, l))
+            gen_image = sess.run(inputs["generated"])
+            save_image_with_restore(gen_image[0], cont_mean[0], os.path.join('data', 'gen_{}'.format(j),'gen_{}.jpg'.format(i+1)))
