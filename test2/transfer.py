@@ -94,7 +94,8 @@ class Transfer:
                 torch.cuda.empty_cache()
                 if (imid % (len(train_loader) // 100) == 0):
                     self.predict("./test/land.jpg", count)
-                    torch.save(self.style_net.state_dict(), "./model/style_net_save_epochs:_" + str(count) + ".pth")
+                    name = "./model/net_save_epochs_" + str(count) + ".pth"
+                    torch.save(self.style_net.state_dict(), name)
                 print(str(imid) + " Loss :" + str(Loss))
             print("epochs :" + str(count) + " loss :" + str(Loss))
             plt.close()
