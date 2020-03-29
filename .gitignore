@@ -1,3 +1,13 @@
 
 *.npz
 *.jpg
+test2/__pycache__/dataset.cpython-37.pyc
+test2/__pycache__/loss_network.cpython-37.pyc
+test2/__pycache__/opticalflow.cpython-37.pyc
+test2/__pycache__/transfer.cpython-37.pyc
+test2/__pycache__/vgg.cpython-37.pyc
+test2/__pycache__/utilFunc.cpython-37.pyc
+test2/__pycache__/videocrawler.cpython-37.pyc
+test2/__pycache__/style_network.cpython-37.pyc
+test2/.vscode/launch.json
+test2/train/*
