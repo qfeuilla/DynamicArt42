@@ -102,11 +102,19 @@ class Transfer:
             
 
     def predict(self, img_path, step=0): # add a int to choose wich train  network, after testing part
+        self.style_net.eval()
         content_image = utils.load_rgbimg(img_path, size=1000)
         print(content_image.shape)
-        content_image = content_image.repeat(1, 1, 1, 1)
-        content_image = utils.preprocess(content_image)
+        content_image = content_image.unsqueeze(0)
         content_image = content_image.to(torch.device("cuda"))
+        content_image = Variable(utils.preprocess(content_image), volatile=True)
+
         output = self.style_net(content_image)
         utils.save_bgrimage(content_image.data[0], './test/preprocess_test.jpg')
         utils.save_bgrimage(output.data[0], '.'.join(img_path.split(".")[:-1])+"_stylized"+str(step)+'.'+img_path.split(".")[-1])
+    
+    def load_weight(self, weight_path):
+        self.style_net = self.style_net.to(torch.device("cuda"))
+        self.loss_net = self.loss_net.to(torch.device("cuda"))
+        self.style_net.load_state_dict(torch.load(weight_path))
+        self.style_net.eval()

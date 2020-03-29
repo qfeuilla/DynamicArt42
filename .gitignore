@@ -11,3 +11,11 @@ test2/train/*
 test2/test/land_stylized0.jpg
 test2/model/net_save_epochs_0.pth
 test2/test/land_stylized0.jpg
+test2/model/save_mosaic.pth
+test2/model/save_style1.pth
+test2/style/mosaic.jpg
+test2/style/udnie.jpg
+test2/test/land_stylized0mosaic.jpg
+test2/test/land_stylized0.jpg
+test2/test/land_stylizedstyle1.jpg
+test2/test/land_stylized0.jpg
