@@ -16,7 +16,7 @@ from torchvision import datasets
 import cv2 
 
 class Transfer:
-    def __init__(self, epoch, data_path, style_path, lr, spatial_a, spatial_b, img_size=600):
+    def __init__(self, epoch, data_path, style_path, lr, spatial_a, spatial_b, img_size=256):
         self.epoch = epoch
         self.data_path = data_path
         self.style_path = style_path
@@ -102,7 +102,7 @@ class Transfer:
             
 
     def predict(self, img_path, step=0): # add a int to choose wich train  network, after testing part
-        content_image = utils.load_rgbimg(img_path, size=self.img_size)
+        content_image = utils.load_rgbimg(img_path, size=1000)
         print(content_image.shape)
         content_image = content_image.repeat(1, 1, 1, 1)
         content_image = utils.preprocess(content_image)
