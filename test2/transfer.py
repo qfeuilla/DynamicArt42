@@ -16,15 +16,16 @@ from torchvision import datasets
 import cv2 
 
 class Transfer:
-    def __init__(self, epoch, data_path, style_path, lr, spatial_a, spatial_b, img_size=256):
+    def __init__(self, epoch, data_path, style_path, lr, spatial_a, spatial_b, spatial_r, img_size=256):
         self.epoch = epoch
         self.data_path = data_path
         self.style_path = style_path
         self.lr = lr
-        self.batch = 1
+        self.batch = 2
 
         self.s_a = spatial_a
         self.s_b = spatial_b
+        self.s_r = spatial_r
 
         self.transform = transforms.Compose([transforms.Scale(img_size),
                                     transforms.CenterCrop(img_size),
@@ -42,7 +43,7 @@ class Transfer:
         
         train_dataset = datasets.ImageFolder(self.data_path, self.transform)
         kwargs = {'num_workers': 0, 'pin_memory': False}
-        train_loader = DataLoader(train_dataset, batch_size=1, **kwargs)
+        train_loader = DataLoader(train_dataset, batch_size=self.batch, **kwargs)
 
         adam = optim.Adam(self.style_net.parameters(), lr=self.lr)
         mse_loss = torch.nn.MSELoss()
@@ -63,6 +64,7 @@ class Transfer:
             # frames = videos[np.random.randint(0, self.batch)]
             for imid, (x, _) in enumerate(train_loader):
                 adam.zero_grad()
+                nbatch = len(x)
                 x = Variable(utils.preprocess(x)).to(torch.device("cuda"))
 
                 y = self.style_net(x)
@@ -78,14 +80,14 @@ class Transfer:
 
                 # print(content_loss);
                 style_loss = 0
+                tv_loss = 0
                 for a in range(len(y_vgg_loss)):
                     gram_s = Variable(grams_style[a].data, requires_grad=False)
                     gram_y = utils.gram(y_vgg_loss[a])
-                    style_loss += mse_loss(gram_y, gram_s)
+                    style_loss += mse_loss(gram_y, gram_s[:nbatch, :, :])
+                    tv_loss += TVLoss()(y_vgg_loss[a])
                 
-                # print(style_loss)
-                
-                spatial_loss = self.s_a * content_loss + self.s_b * style_loss
+                spatial_loss = self.s_a * content_loss + self.s_b * style_loss + self.s_r * tv_loss
                 Loss = spatial_loss # + self.t_l * temporal_loss
                 Loss.backward()
                 adam.step()
@@ -104,7 +106,7 @@ class Transfer:
 
     def predict(self, img_path, step=0): # add a int to choose wich train  network, after testing part
         self.style_net.eval()
-        content_image = utils.load_rgbimg(img_path, size=1000)
+        content_image = utils.load_rgbimg(img_path)
         print(content_image.shape)
         content_image = content_image.unsqueeze(0)
         content_image = content_image.to(torch.device("cuda"))
