@@ -74,7 +74,7 @@ class Transfer:
 
                 y_vgg_loss = self.loss_net(y)
 
-                content_loss = mse_loss(y_vgg_loss[1], x_vgg_loss[1])
+                content_loss = mse_loss(y_vgg_loss[2], x_vgg_loss[2])
 
                 # print(content_loss);
                 style_loss = 0
@@ -94,6 +94,7 @@ class Transfer:
                 torch.cuda.empty_cache()
                 if (imid % (len(train_loader) // 100) == 0):
                     self.predict("./test/land.jpg", count)
+                    self.style_net.eval()
                     name = "./model/net_save_epochs_" + str(count) + ".pth"
                     torch.save(self.style_net.state_dict(), name)
                 print(str(imid) + " Loss :" + str(Loss))
