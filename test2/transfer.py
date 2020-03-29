@@ -16,12 +16,12 @@ from torchvision import datasets
 import cv2 
 
 class Transfer:
-    def __init__(self, epoch, data_path, style_path, lr, spatial_a, spatial_b, spatial_r, img_size=256):
+    def __init__(self, epoch, data_path, style_path, batch, lr, spatial_a, spatial_b, spatial_r, img_size=256):
         self.epoch = epoch
         self.data_path = data_path
         self.style_path = style_path
         self.lr = lr
-        self.batch = 2
+        self.batch = batch
 
         self.s_a = spatial_a
         self.s_b = spatial_b
