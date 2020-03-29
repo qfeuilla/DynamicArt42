@@ -8,3 +8,6 @@ test2/__pycache__/videocrawler.cpython-37.pyc
 test2/__pycache__/style_network.cpython-37.pyc
 test2/.vscode/launch.json
 test2/train/*
+test2/test/land_stylized0.jpg
+test2/model/net_save_epochs_0.pth
+test2/test/land_stylized0.jpg
