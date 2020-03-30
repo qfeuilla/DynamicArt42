@@ -18,22 +18,12 @@ def load_rgbimg(filename, size=None, scale=None):
     img = torch.from_numpy(img).float()
     return img
 
-def preprocess(batch):
-    batch = batch.transpose(0, 1)
-    (r, g, b) = torch.chunk(batch, 3)
-    batch = torch.cat((b, g, r))
-    batch = batch.transpose(0, 1)
-    return batch
-
-def subtract_imagenet_mean(batch):
-    tensortype = type(batch.data)
-    mean = tensortype(batch.data.size())
-    mean[:, 0, :, :] = 103.939
-    mean[:, 1, :, :] = 116.779
-    mean[:, 2, :, :] = 123.680
-    batch = batch.sub(Variable(mean).to(torch.device("cuda")))
-    return batch
-
+def normalize(batch):
+    mean = batch.new_tensor([0.485, 0.456, 0.406]).view(-1, 1, 1)
+    std = batch.new_tensor([0.229, 0.224, 0.225]).view(-1, 1, 1)
+    batch = batch.div_(255.0)
+    return (batch - mean) / std
+    
 def gram(y):
     (b, ch, h, w) = y.size()
     features = y.view(b, ch, w * h)

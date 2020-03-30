@@ -43,19 +43,16 @@ class Transfer:
         self.style_net = self.style_net.to(torch.device("cuda"))
         self.loss_net = self.loss_net.to(torch.device("cuda"))
         train_dataset = datasets.ImageFolder(self.data_path, self.transform)
-        kwargs = {'num_workers': 0, 'pin_memory': False}
-        train_loader = DataLoader(train_dataset, batch_size=self.batch, **kwargs)
+        train_loader = DataLoader(train_dataset, batch_size=self.batch)
 
         adam = optim.Adam(self.style_net.parameters(), lr=self.lr)
         mse_loss = torch.nn.MSELoss()
 
         style = utils.load_rgbimg(self.style_path, size=self.img_size)
         style = style.repeat(self.batch, 1, 1, 1)
-        style = utils.preprocess(style)
         style = style.to(torch.device("cuda"))
 
-        style_v = Variable(style, volatile=True)
-        style_v = utils.subtract_imagenet_mean(style_v)
+        style_v = utils.normalize(style)
         style_vgg_loss = self.loss_net(style_v)
         grams_style = [utils.gram(y) for y in style_vgg_loss]
 
@@ -66,27 +63,23 @@ class Transfer:
             for imid, (x, _) in enumerate(train_loader):
                 adam.zero_grad()
                 nbatch = len(x)
-                x = Variable(utils.preprocess(x)).to(torch.device("cuda"))
-
+                
+                x = x.to(torch.device("cuda"))
                 y = self.style_net(x)
 
-                xc = Variable(x.data.clone(), requires_grad=False)
 
-                y = utils.subtract_imagenet_mean(y)
-                xc = utils.subtract_imagenet_mean(xc)
+                y = utils.normalize(y)
+                x = utils.normalize(x)
 
-                x_vgg_loss = self.loss_net(xc)
-
+                x_vgg_loss = self.loss_net(x)
                 y_vgg_loss = self.loss_net(y)
 
-                x_vgg_loss_c = Variable(x_vgg_loss[1].data, requires_grad=False)
-
-                content_loss = mse_loss(y_vgg_loss[1], x_vgg_loss_c)
+                content_loss = mse_loss(y_vgg_loss[1], x_vgg_loss[1])
 
                 # print(content_loss);
                 style_loss = 0
                 for a in range(len(y_vgg_loss)):
-                    gram_s = Variable(grams_style[a].data, requires_grad=False)
+                    gram_s = grams_style[a]
                     gram_y = utils.gram(y_vgg_loss[a])
                     style_loss += mse_loss(gram_y, gram_s[:nbatch, :, :])
                 
@@ -113,7 +106,6 @@ class Transfer:
         print(content_image.shape)
         content_image = content_image.unsqueeze(0)
         content_image = content_image.to(torch.device("cuda"))
-        content_image = Variable(utils.preprocess(content_image), requires_grad=False)
 
         output = self.style_net(content_image)
         utils.save_bgrimage(content_image.data[0], './test/preprocess_test.jpg')
