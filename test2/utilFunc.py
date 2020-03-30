@@ -3,6 +3,9 @@ from PIL import Image
 import torch
 from torch.autograd import Variable
 import imutils
+from loss_network import Vgg16
+import os
+import torchfile 
 
 def load_rgbimg(filename, size=None, scale=None):
     img = Image.open(filename)
@@ -48,3 +51,15 @@ def save_bgrimage(tensor, filename):
     (b, g, r) = torch.chunk(tensor, 3)
     tensor = torch.cat((r, g, b))
     save_rgbimage(tensor, filename)
+
+def get_vgg_dict(vgg_path):
+    load = torch.load(vgg_path)
+    keys = list(load.keys())[26:]
+    for k in keys:
+        del load[k]
+    keys = list(load.keys())
+    new = ["conv1_1.weight", "conv1_1.bias", "conv1_2.weight", "conv1_2.bias", "conv2_1.weight", "conv2_1.bias", "conv2_2.weight", "conv2_2.bias", "conv3_1.weight", "conv3_1.bias", "conv3_2.weight", "conv3_2.bias", "conv3_3.weight", "conv3_3.bias", "conv4_1.weight", "conv4_1.bias", "conv4_2.weight", "conv4_2.bias", "conv4_3.weight", "conv4_3.bias", "conv5_1.weight", "conv5_1.bias", "conv5_2.weight", "conv5_2.bias", "conv5_3.weight", "conv5_3.bias"]
+    for n, k in zip(new, keys):
+        load[n] = load[k]
+        del load[k]
+    return load

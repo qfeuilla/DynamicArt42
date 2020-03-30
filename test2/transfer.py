@@ -1,5 +1,6 @@
 import torch
 import torch.optim as optim
+import os
 
 import matplotlib.pyplot as plt
 
@@ -16,7 +17,7 @@ from torchvision import datasets
 import cv2 
 
 class Transfer:
-    def __init__(self, epoch, data_path, style_path, batch, lr, spatial_a, spatial_b, spatial_r, img_size=256):
+    def __init__(self, epoch, data_path, style_path, batch, lr, spatial_a, spatial_b, img_size=256):
         self.epoch = epoch
         self.data_path = data_path
         self.style_path = style_path
@@ -25,7 +26,6 @@ class Transfer:
 
         self.s_a = spatial_a
         self.s_b = spatial_b
-        self.s_r = spatial_r
 
         self.transform = transforms.Compose([transforms.Scale(img_size),
                                     transforms.CenterCrop(img_size),
@@ -37,10 +37,13 @@ class Transfer:
 
         self.img_size = img_size                                                                  
 
-    def train(self):        
+    def train(self):
+        torch.manual_seed(42)
+        torch.cuda.manual_seed(42)
         self.style_net = self.style_net.to(torch.device("cuda"))
+        load = utils.get_vgg_dict("./vgg/vgg16.pth")
+        self.loss_net.load_state_dict(load)
         self.loss_net = self.loss_net.to(torch.device("cuda"))
-        
         train_dataset = datasets.ImageFolder(self.data_path, self.transform)
         kwargs = {'num_workers': 0, 'pin_memory': False}
         train_loader = DataLoader(train_dataset, batch_size=self.batch, **kwargs)
@@ -69,25 +72,27 @@ class Transfer:
 
                 y = self.style_net(x)
 
-                y = utils.subtract_imagenet_mean(y)
-                x = utils.subtract_imagenet_mean(x)
+                xc = Variable(x.data.clone(), requires_grad=False)
 
-                x_vgg_loss = self.loss_net(x)
+                y = utils.subtract_imagenet_mean(y)
+                xc = utils.subtract_imagenet_mean(xc)
+
+                x_vgg_loss = self.loss_net(xc)
 
                 y_vgg_loss = self.loss_net(y)
 
-                content_loss = mse_loss(y_vgg_loss[2], x_vgg_loss[2])
+                x_vgg_loss_c = Variable(x_vgg_loss[1].data, requires_grad=False)
+
+                content_loss = mse_loss(y_vgg_loss[1], x_vgg_loss_c)
 
                 # print(content_loss);
                 style_loss = 0
-                tv_loss = 0
                 for a in range(len(y_vgg_loss)):
                     gram_s = Variable(grams_style[a].data, requires_grad=False)
                     gram_y = utils.gram(y_vgg_loss[a])
                     style_loss += mse_loss(gram_y, gram_s[:nbatch, :, :])
-                    tv_loss += TVLoss()(y_vgg_loss[a])
                 
-                spatial_loss = self.s_a * content_loss + self.s_b * style_loss + self.s_r * tv_loss
+                spatial_loss = self.s_a * content_loss + self.s_b * style_loss
                 Loss = spatial_loss # + self.t_l * temporal_loss
                 Loss.backward()
                 adam.step()
@@ -106,11 +111,11 @@ class Transfer:
 
     def predict(self, img_path, step=0): # add a int to choose wich train  network, after testing part
         self.style_net.eval()
-        content_image = utils.load_rgbimg(img_path)
+        content_image = utils.load_rgbimg(img_path, size=1000)
         print(content_image.shape)
         content_image = content_image.unsqueeze(0)
         content_image = content_image.to(torch.device("cuda"))
-        content_image = Variable(utils.preprocess(content_image), volatile=True)
+        content_image = Variable(utils.preprocess(content_image), requires_grad=False)
 
         output = self.style_net(content_image)
         utils.save_bgrimage(content_image.data[0], './test/preprocess_test.jpg')
