@@ -9,4 +9,4 @@ For test2, I have used this repo https://github.com/abhiskk/fast-neural-style/ a
 
 ![alt text](https://raw.githubusercontent.com/qfeuilla/DynamicArt42/master/1n8x579w.bmp)   
 
-To use it, you have to download https://download.pytorch.org/models/vgg16-397923af.pth and put in test2/vgg/ and then run main.py
+To use it, run main.py
