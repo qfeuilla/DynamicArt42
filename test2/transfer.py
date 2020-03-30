@@ -108,8 +108,8 @@ class Transfer:
         content_image = content_image.to(torch.device("cuda"))
 
         output = self.style_net(content_image)
-        utils.save_bgrimage(content_image.data[0], './test/preprocess_test.jpg')
-        utils.save_bgrimage(output.data[0], '.'.join(img_path.split(".")[:-1])+"_stylized"+str(step)+'.'+img_path.split(".")[-1])
+        utils.save_rgbimage(content_image.data[0], './test/preprocess_test.jpg')
+        utils.save_rgbimage(output.data[0], '.'.join(img_path.split(".")[:-1])+"_stylized"+str(step)+'.'+img_path.split(".")[-1])
     
     def load_weight(self, weight_path):
         self.style_net = self.style_net.to(torch.device("cuda"))
