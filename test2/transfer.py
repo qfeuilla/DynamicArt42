@@ -41,8 +41,6 @@ class Transfer:
         torch.manual_seed(42)
         torch.cuda.manual_seed(42)
         self.style_net = self.style_net.to(torch.device("cuda"))
-        load = utils.get_vgg_dict("./vgg/vgg16.pth")
-        self.loss_net.load_state_dict(load)
         self.loss_net = self.loss_net.to(torch.device("cuda"))
         train_dataset = datasets.ImageFolder(self.data_path, self.transform)
         kwargs = {'num_workers': 0, 'pin_memory': False}
