@@ -1,6 +1,7 @@
 import torch
 import torch.optim as optim
 import os
+import imutils
 
 import matplotlib.pyplot as plt
 
@@ -17,7 +18,7 @@ from torchvision import datasets
 import cv2 
 
 class Transfer:
-    def __init__(self, epoch, data_path, style_path, batch, lr, spatial_a, spatial_b, img_size=256):
+    def __init__(self, epoch, data_path, style_path, batch, lr, spatial_a, spatial_b, img_size=400):
         self.epoch = epoch
         self.data_path = data_path
         self.style_path = style_path
@@ -102,7 +103,7 @@ class Transfer:
 
     def predict(self, img_path, step=0): # add a int to choose wich train  network, after testing part
         self.style_net.eval()
-        content_image = utils.load_rgbimg(img_path, size=1000)
+        content_image = utils.load_rgbimg(img_path)
         print(content_image.shape)
         content_image = content_image.unsqueeze(0)
         content_image = content_image.to(torch.device("cuda"))
@@ -116,3 +117,28 @@ class Transfer:
         self.loss_net = self.loss_net.to(torch.device("cuda"))
         self.style_net.load_state_dict(torch.load(weight_path))
         self.style_net.eval()
+    
+    def live_transfer(self, mirror=False):
+        cam = cv2.VideoCapture(0)
+        while True:
+            _, img = cam.read()
+            if mirror:
+                img = cv2.flip(img, 1)
+            img = imutils.resize(img, width=1000, height=1000)
+            img = np.array(img).transpose(2, 0, 1)
+            img = torch.from_numpy(img).float()
+            img = img.unsqueeze(0)
+            img = img.to(torch.device("cuda"))
+            img = self.style_net(img)
+            img = img.data[0]
+            (b, g, r) = torch.chunk(img, 3)
+            img = torch.cat((r, g, b))
+            img = img.cpu().clamp(0, 255).detach().numpy()
+            img = img.transpose(1, 2, 0).astype('uint8')
+            img = np.array(img)
+            cv2.imshow('my webcam', img)
+            if cv2.waitKey(1) == 27: 
+                break  # esc to quit
+            del img
+            torch.cuda.empty_cache()
+        cv2.destroyAllWindows()
