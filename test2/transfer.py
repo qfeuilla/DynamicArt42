@@ -5,6 +5,8 @@ import imutils
 
 import matplotlib.pyplot as plt
 
+from tqdm import tqdm
+
 from torch.autograd import Variable
 from torchvision import datasets, transforms
 
@@ -58,7 +60,7 @@ class Transfer:
         grams_style = [utils.gram(y) for y in style_vgg_loss]
 
         print('Training Start!!')
-        for count in range(self.epoch):
+        for count in tqdm(range(self.epoch)):
             self.style_net.train()
             # frames = videos[np.random.randint(0, self.batch)]
             for imid, (x, _) in enumerate(train_loader):
@@ -91,20 +93,20 @@ class Transfer:
 
                 del x
                 torch.cuda.empty_cache()
-                if (imid % (len(train_loader) // 100) == 0):
-                    self.predict("./test/land.jpg", count)
+                
+                if (imid % (len(train_loader) // 100 if len(train_loader) >= 100 else len(train_loader) - 1) == 0):
+                    self.predict("./test/trump.jpg", count)
                     self.style_net.eval()
                     name = "./model/net_save_epochs_" + str(count) + ".pth"
                     torch.save(self.style_net.state_dict(), name)
-                print(str(imid) + " Loss :" + str(Loss))
+                    print(str(imid) + " Loss :" + str(Loss))
             print("epochs :" + str(count) + " loss :" + str(Loss))
             plt.close()
             
 
     def predict(self, img_path, step=0): # add a int to choose wich train  network, after testing part
         self.style_net.eval()
-        content_image = utils.load_rgbimg(img_path)
-        print(content_image.shape)
+        content_image = utils.load_rgbimg(img_path, size=500)
         content_image = content_image.unsqueeze(0)
         content_image = content_image.to(torch.device("cuda"))
 
